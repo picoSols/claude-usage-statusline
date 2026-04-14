@@ -13,6 +13,9 @@ const { spawn } = require('child_process');
 
 const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 const USAGE_CACHE_TTL_SEC = 60;
+// Beyond this age we stop trusting the cache — show a dim ∗ marker instead of
+// pretending the bars are live. API outages should not read as "all good".
+const USAGE_CACHE_STALE_SEC = 600;
 
 // Context window display: Claude Code reserves ~16.5% for autocompact buffer,
 // so we normalize to show 100% at the usable limit, not the absolute window.
@@ -31,7 +34,10 @@ function threshColor(pct) {
 }
 function fmtDelta(iso) {
   if (!iso) return '';
-  const delta = Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
+  const delta = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+  // Reset time is in the past — the cache is stale past its own window.
+  // Return '' so the caller hides the "resets …" suffix entirely.
+  if (delta <= 0) return '';
   if (delta < 60) return '<1m';
   const d = Math.floor(delta / 86400);
   const h = Math.floor((delta % 86400) / 3600);
@@ -67,13 +73,16 @@ function renderUsageLine() {
   }
   if (!cache || cache.five_hour?.utilization == null) return '';
 
+  const cacheAge = now - (cache.fetched_at || 0);
+  const staleMark = cacheAge > USAGE_CACHE_STALE_SEC ? ansi('2', '∗ ') : '';
+
   const seg = (label, node) => {
     const pct = Math.max(0, Math.min(100, Math.round(node?.utilization ?? 0)));
     const reset = fmtDelta(node?.resets_at);
     const resetStr = reset ? ' ' + ansi('2', `resets ${reset}`) : '';
     return ansi(threshColor(pct), `${label} ${bar(pct)} ${pct}%`) + resetStr;
   };
-  return '\n' + seg('5h', cache.five_hour) + ' ' + ansi('2', '│') + ' ' + seg('7d', cache.seven_day);
+  return '\n' + staleMark + seg('5h', cache.five_hour) + ' ' + ansi('2', '│') + ' ' + seg('7d', cache.seven_day);
 }
 
 function findActiveTask(session) {
@@ -82,7 +91,7 @@ function findActiveTask(session) {
   if (!fs.existsSync(todosDir)) return '';
   try {
     const files = fs.readdirSync(todosDir)
-      .filter(f => f.startsWith(session) && f.includes('-agent-') && f.endsWith('.json'))
+      .filter(f => f.startsWith(session + '-') && f.includes('-agent-') && f.endsWith('.json'))
       .map(f => ({ name: f, mtime: fs.statSync(path.join(todosDir, f)).mtime }))
       .sort((a, b) => b.mtime - a.mtime);
     if (!files.length) return '';

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 120" width="780" height="120" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+  <style>
+    .bg    { fill: #0d1117; }
+    .frame { fill: #161b22; }
+    .dot-r { fill: #ff5f56; }
+    .dot-y { fill: #ffbd2e; }
+    .dot-g { fill: #27c93f; }
+    .dim   { fill: #8b949e; }
+    .fg    { fill: #e6edf3; font-weight: 600; }
+    .green { fill: #3fb950; }
+    .yel   { fill: #d29922; }
+  </style>
+
+  <rect class="bg" width="780" height="120" rx="8"/>
+  <rect class="frame" width="780" height="28" rx="8"/>
+  <rect class="frame" y="20" width="780" height="10"/>
+  <circle class="dot-r" cx="16" cy="14" r="5"/>
+  <circle class="dot-y" cx="34" cy="14" r="5"/>
+  <circle class="dot-g" cx="52" cy="14" r="5"/>
+  <text class="dim" x="390" y="18" text-anchor="middle">~/my-app — claude</text>
+
+  <!-- Line 1: model │ task │ dir  context-bar -->
+  <text x="16" y="58">
+    <tspan class="dim">Opus 4.6</tspan><tspan class="dim"> │ </tspan><tspan class="fg">Refactoring auth module</tspan><tspan class="dim"> │ </tspan><tspan class="dim">my-app</tspan><tspan>  </tspan><tspan class="green">███░░░░░░░ 34%</tspan>
+  </text>
+
+  <!-- Line 2: 5h bar + reset │ 7d bar + reset -->
+  <text x="16" y="84">
+    <tspan class="green">5h ██░░░░░░░░ 24%</tspan><tspan class="dim"> resets 1h 39m</tspan><tspan class="dim">  │  </tspan><tspan class="yel">7d █████░░░░░ 54%</tspan><tspan class="dim"> resets 2d 14h</tspan>
+  </text>
+</svg>

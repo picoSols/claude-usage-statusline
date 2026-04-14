@@ -2,13 +2,12 @@
 
 A fast, zero-dependency statusline for [Claude Code](https://claude.ai/code) that shows your model, current task, directory, context window, **and** live 5-hour / 7-day API usage with reset countdowns.
 
-```
-Opus 4.6 │ Refactoring auth module │ my-app ███░░░░░░░ 34%
-5h ██░░░░░░░░ 24% resets 2h │ 7d █████░░░░░ 54% resets 3d
-```
+![claude-usage-statusline screenshot](docs/screenshot.svg)
 
 - **5h / 7d bars** — fills as you consume each rate-limit window
-- **Reset countdown** — e.g. `resets 2h`, `resets 38m`, `resets 3d`
+- **Reset countdown** — two highest non-zero units, e.g. `resets 1h 39m`, `resets 2d 14h`, `resets 45m`
+- **Device-clock driven** — countdown ticks smoothly between API refreshes; survives brief outages
+- **Stale-cache marker** — a dim `∗` prefix appears if the API hasn't been reached in >10 min, so outages never read as "all good"
 - **Context bar** — normalized against Claude Code's usable window (accounts for autocompact buffer)
 - **Color thresholds** — green · yellow · orange · red at 50 / 75 / 90 %
 - **Non-blocking** — statusline reads a 60s cache; usage is refetched by a detached background process, so rendering is instant
@@ -144,4 +143,4 @@ MIT — see `LICENSE`.
 ## Credits
 
 - [@vildanbina](https://github.com/vildanbina) for the original [`cc-usage-statusline` gist](https://gist.github.com/vildanbina/af6b1186fa529093bdd5d61bdf6d7b33)
-- The [GSD](https://github.com/solvable/get-shit-done) statusline for the bar-rendering style
+- The `gsd` (Get Shit Done) statusline for the bar-rendering style
