@@ -32,9 +32,13 @@ function threshColor(pct) {
 function fmtDelta(iso) {
   if (!iso) return '';
   const delta = Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000));
-  if (delta < 3600) return `${Math.max(1, Math.round(delta / 60))}m`;
-  if (delta < 86400) return `${Math.round(delta / 3600)}h`;
-  return `${Math.round(delta / 86400)}d`;
+  if (delta < 60) return '<1m';
+  const d = Math.floor(delta / 86400);
+  const h = Math.floor((delta % 86400) / 3600);
+  const m = Math.floor((delta % 3600) / 60);
+  if (d) return h ? `${d}d ${h}h` : `${d}d`;
+  if (h) return m ? `${h}h ${m}m` : `${h}h`;
+  return `${m}m`;
 }
 
 function renderContext(remaining) {
