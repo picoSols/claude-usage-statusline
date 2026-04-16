@@ -21,20 +21,37 @@ Inspired by [@vildanbina's `cc-usage-statusline` gist](https://gist.github.com/v
 
 ```bash
 git clone https://github.com/picoSols/claude-usage-statusline.git ~/.claude/claude-usage-statusline
+~/.claude/claude-usage-statusline/install.sh
 ```
 
-Then point Claude Code at it — edit `~/.claude/settings.json`:
+The install script:
+1. Finds your `node` binary and resolves the **absolute path** (works with nvm, fnm, volta, brew, or system node)
+2. Writes the `statusLine` entry into `~/.claude/settings.json` (creates or merges)
+3. Primes the usage cache so bars appear immediately
 
+Restart Claude Code. That's it.
+
+<details>
+<summary>Manual install (if you prefer)</summary>
+
+Find your absolute node path:
+```bash
+which node        # e.g. /Users/you/.nvm/versions/node/v22.0.0/bin/node
+```
+
+Then edit `~/.claude/settings.json`:
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "node ~/.claude/claude-usage-statusline/statusline.js"
+    "command": "/absolute/path/to/node ~/.claude/claude-usage-statusline/statusline.js"
   }
 }
 ```
 
-Restart Claude Code. That's it.
+> **Why the absolute path?** Claude Code runs statusline commands in a non-interactive shell that doesn't source `.bashrc`/`.zshrc`. Version managers like nvm, fnm, and volta rely on shell init scripts to put `node` on PATH, so a bare `node` command silently fails. The install script handles this automatically.
+
+</details>
 
 ### Uninstall
 
@@ -113,7 +130,21 @@ This tool is designed to be auditable in one sitting. The whole thing is ~200 li
 
 ## Troubleshooting
 
-**The second line doesn't appear.**
+**Nothing shows up at all (no statusline).**
+Most likely `node` isn't found. Claude Code runs in a non-interactive shell that doesn't source `~/.bashrc`/`~/.zshrc`, so version managers (nvm, fnm, volta) aren't initialized. Fix: re-run the install script, or use an absolute path in your settings:
+```bash
+# Find your real node binary
+which node    # nvm:   ~/.nvm/versions/node/v22.x.x/bin/node
+              # fnm:   ~/.local/share/fnm/node-versions/v22.x.x/installation/bin/node
+              # volta:  ~/.volta/bin/node
+              # brew:  /opt/homebrew/bin/node
+```
+Then set the absolute path in `~/.claude/settings.json`:
+```json
+"command": "/absolute/path/to/node ~/.claude/claude-usage-statusline/statusline.js"
+```
+
+**The second line doesn't appear (first line works).**
 Run the refresher manually once and check the cache:
 ```bash
 node ~/.claude/claude-usage-statusline/cc-usage-refresh.js
