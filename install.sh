@@ -45,37 +45,23 @@ chmod +x "$STATUSLINE_JS" "$SCRIPT_DIR/cc-usage-refresh.js"
 # --- Write settings.json ---
 COMMAND="$NODE_BIN $STATUSLINE_JS"
 
-if [ ! -f "$SETTINGS_FILE" ]; then
-  mkdir -p "$(dirname "$SETTINGS_FILE")"
-  cat > "$SETTINGS_FILE" <<EOF
-{
-  "statusLine": {
-    "type": "command",
-    "command": "$COMMAND"
-  }
-}
-EOF
-  echo "Created $SETTINGS_FILE"
-elif command -v node >/dev/null 2>&1; then
-  # Use node to safely merge into existing JSON
-  "$NODE_BIN" -e "
-    const fs = require('fs');
-    const f = '$SETTINGS_FILE';
-    let settings = {};
-    try { settings = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {}
-    settings.statusLine = { type: 'command', command: '$COMMAND' };
-    fs.writeFileSync(f, JSON.stringify(settings, null, 2) + '\n');
-  "
-  echo "Updated statusLine in $SETTINGS_FILE"
+# Pass values via env vars and a quoted heredoc so paths containing
+# quote characters can't break out of the JS string and run code.
+mkdir -p "$(dirname "$SETTINGS_FILE")"
+if [ -f "$SETTINGS_FILE" ]; then
+  verb="Updated"
 else
-  echo "Warning: could not update $SETTINGS_FILE automatically."
-  echo "Add this manually:"
-  echo ""
-  echo '  "statusLine": {'
-  echo '    "type": "command",'
-  echo "    \"command\": \"$COMMAND\""
-  echo '  }'
+  verb="Created"
 fi
+CC_SL_FILE="$SETTINGS_FILE" CC_SL_COMMAND="$COMMAND" "$NODE_BIN" <<'NODE_EOF'
+const fs = require('fs');
+const f = process.env.CC_SL_FILE;
+let settings = {};
+try { settings = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {}
+settings.statusLine = { type: 'command', command: process.env.CC_SL_COMMAND };
+fs.writeFileSync(f, JSON.stringify(settings, null, 2) + '\n');
+NODE_EOF
+echo "$verb statusLine in $SETTINGS_FILE"
 
 # --- Prime the cache ---
 echo "Priming usage cache..."
