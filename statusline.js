@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // claude-usage-statusline
 // A Claude Code statusline that shows: model • task • dir • context bar
-// and a second line with 5h / 7d API usage bars + reset countdowns.
+// and a second line with plan-limit usage bars (weekly, per-model weekly) + reset countdowns.
 //
 // Configure via ~/.claude/settings.json:
 //   { "statusLine": { "type": "command", "command": "node /path/to/statusline.js" } }
@@ -71,18 +71,35 @@ function renderUsageLine() {
       child.unref();
     } catch {}
   }
-  if (!cache || cache.five_hour?.utilization == null) return '';
+  if (!cache) return '';
 
   const cacheAge = now - (cache.fetched_at || 0);
   const staleMark = cacheAge > USAGE_CACHE_STALE_SEC ? ansi('2', '∗ ') : '';
 
-  const seg = (label, node) => {
-    const pct = Math.max(0, Math.min(100, Math.round(node?.utilization ?? 0)));
-    const reset = fmtDelta(node?.resets_at);
+  const seg = (label, utilization, resetsAt) => {
+    const pct = Math.max(0, Math.min(100, Math.round(utilization ?? 0)));
+    const reset = fmtDelta(resetsAt);
     const resetStr = reset ? ' ' + ansi('2', `resets ${reset}`) : '';
     return ansi(threshColor(pct), `${label} ${bar(pct)} ${pct}%`) + resetStr;
   };
-  return '\n' + staleMark + seg('5h', cache.five_hour) + ' ' + ansi('2', '│') + ' ' + seg('7d', cache.seven_day);
+  const labelFor = l => {
+    const base = l.group === 'weekly' ? '7d' : (l.group || l.kind || '?');
+    return l.model ? `${base} ${l.model}` : base;
+  };
+
+  let segs;
+  if (Array.isArray(cache.limits) && cache.limits.length) {
+    segs = cache.limits
+      .filter(l => l.percent != null)
+      .map(l => seg(labelFor(l), l.percent, l.resets_at));
+  } else {
+    // Legacy cache shape (five_hour / seven_day); either may be null.
+    segs = [];
+    if (cache.five_hour?.utilization != null) segs.push(seg('5h', cache.five_hour.utilization, cache.five_hour.resets_at));
+    if (cache.seven_day?.utilization != null) segs.push(seg('7d', cache.seven_day.utilization, cache.seven_day.resets_at));
+  }
+  if (!segs.length) return '';
+  return '\n' + staleMark + segs.join(' ' + ansi('2', '│') + ' ');
 }
 
 function findActiveTask(session) {

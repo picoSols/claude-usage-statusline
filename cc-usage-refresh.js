@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Background refresher for Claude API usage (5h + 7d utilization).
+// Background refresher for Claude API usage (plan limits: weekly, per-model weekly, legacy 5h).
 // Spawned detached by statusline.js when the cache is stale. Never run inline.
 //
 // Writes: ~/.claude/cache/cc-usage.json
@@ -93,6 +93,14 @@ function fetchUsage(token) {
         utilization: resp?.seven_day?.utilization ?? null,
         resets_at: resp?.seven_day?.resets_at ?? null,
       },
+      // Newer API: generic list of limits (5h was dropped; weekly + per-model weekly).
+      limits: Array.isArray(resp?.limits) ? resp.limits.map(l => ({
+        kind: l.kind,
+        group: l.group,
+        percent: l.percent,
+        resets_at: l.resets_at,
+        model: l.scope?.model?.display_name || null,
+      })) : null,
     };
     fs.writeFileSync(CACHE_FILE, JSON.stringify(out));
   } catch (e) {
