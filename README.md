@@ -1,10 +1,10 @@
 # claude-usage-statusline
 
-A fast, zero-dependency statusline for [Claude Code](https://claude.ai/code) that shows your model, current task, directory, context window, **and** live 5-hour / 7-day API usage with reset countdowns.
+A fast, zero-dependency statusline for [Claude Code](https://claude.ai/code) that shows your model, current task, directory, context window, **and** live plan-limit usage (weekly, plus any per-model weekly limits) with reset countdowns.
 
 ![claude-usage-statusline screenshot](docs/screenshot.svg)
 
-- **5h / 7d bars** — fills as you consume each rate-limit window
+- **One bar per plan limit** — e.g. `7d` (all models) and `7d Fable` (per-model weekly); whatever limits the API reports are shown, so new or removed limits need no code change. Falls back to the legacy `5h` / `7d` fields if the `limits` list is absent.
 - **Reset countdown** — two highest non-zero units, e.g. `resets 1h 39m`, `resets 2d 14h`, `resets 45m`
 - **Device-clock driven** — countdown ticks smoothly between API refreshes; survives brief outages
 - **Stale-cache marker** — a dim `∗` prefix appears if the API hasn't been reached in >10 min, so outages never read as "all good"
@@ -86,11 +86,17 @@ The cache file is a JSON snapshot:
 
 ```json
 {
-  "fetched_at": 1776132676,
-  "five_hour":  { "utilization": 9,  "resets_at": "2026-04-14T04:00:00Z" },
-  "seven_day":  { "utilization": 54, "resets_at": "2026-04-17T03:00:00Z" }
+  "fetched_at": 1793952079,
+  "five_hour":  { "utilization": null, "resets_at": null },
+  "seven_day":  { "utilization": 43, "resets_at": "2026-11-11T05:00:00Z" },
+  "limits": [
+    { "kind": "weekly_all",    "group": "weekly", "percent": 43, "resets_at": "2026-11-11T05:00:00Z", "model": null },
+    { "kind": "weekly_scoped", "group": "weekly", "percent": 32, "resets_at": "2026-11-11T05:00:00Z", "model": "Fable" }
+  ]
 }
 ```
+
+`limits` mirrors the API's `limits` array and drives the bars. The 5-hour window was removed from the API (`five_hour` is now `null`); the legacy fields are kept only as a fallback.
 
 ## Configuration
 
